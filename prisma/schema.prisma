@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  // previewFeatures multiSchema → permite que Prisma trabaje con
+  // múltiples schemas de Postgres en un solo proyecto.
+  // Lo necesitamos para separar el schema 'public' (datos del SaaS)
+  // de los schemas por tenant (datos de cada iglesia)
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // schemas → lista de schemas que Prisma conoce y puede gestionar.
+  // 'public' → tenants, planes, suscripciones (datos del SaaS)
+  // 'tenant_template' → lo usaremos como schema base para migrar
+  //                     a nuevos tenants (lo veremos más adelante)
+  schemas  = ["public", "tenant_template"]
+}
+
+// ─── Schema PUBLIC ────────────────────────────────────────────────────────────
+// Datos globales del SaaS. Solo el Super Admin los gestiona.
+
+model Tenant {
+  id         String   @id @default(uuid())
+  name       String
+  // subdomain → identifica al tenant en cada request
+  // Ejemplo: 'bethel' para bethel.miapp.com
+  subdomain  String   @unique
+  // schemaName → nombre real del schema en Postgres
+  // Ejemplo: 'iglesia_bethel'
+  schemaName String   @unique @map("schema_name")
+  email      String   @unique
+  address    String?
+  phone      String?
+  currency   String   @default("BOB")
+  timezone   String   @default("America/La_Paz")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("tenants")
+  @@schema("public")
+}
+
+model Plan {
+  id         String   @id @default(uuid())
+  name       String
+  price      Decimal  @db.Decimal(10, 2)
+  maxMembers Int      @map("max_members")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+  @@schema("public")
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  tenantId  String             @map("tenant_id")
+  planId    String             @map("plan_id")
+  status    SubscriptionStatus @default(ACTIVE)
+  startsAt  DateTime           @map("starts_at")
+  endsAt    DateTime?          @map("ends_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+  @@schema("public")
+}
+
+// ── Usuarios y autenticación ─────────────────────────────────────────────────
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String    @map("password_hash")
+  role               UserRole  @default(SECRETARY)
+  isActive           Boolean   @default(true) @map("is_active")
+  emailVerified      Boolean   @default(false) @map("email_verified")
+  emailVerifyToken   String?   @map("email_verify_token")
+  emailVerifyExpires DateTime? @map("email_verify_expires")
+  resetToken         String?   @map("reset_token")
+  resetTokenExpires  DateTime? @map("reset_token_expires")
+  twoFactorEnabled   Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorSecret    String?   @map("two_factor_secret")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+  @@schema("tenant_template")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  // Guardamos el hash del token, nunca el token en texto plano
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@schema("tenant_template")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  CHURCH_ADMIN
+  SECRETARY
+
+  @@schema("tenant_template")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  PAST_DUE
+
+  @@schema("public")
+}
