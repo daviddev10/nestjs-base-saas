@@ -17,7 +17,7 @@ export class AuthController {
 
   /**
    * @summary Registrar un nuevo usuario
-   * @description Registra un usuario en el tenant actual (iglesia). El tenant se determina automáticamente por el subdominio.
+   * @description Registra un usuario en el tenant actual (organizacion). El tenant se determina automaticamente por el subdominio.
    */
   @Post('register')
   @Public()

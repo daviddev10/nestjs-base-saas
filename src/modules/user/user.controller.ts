@@ -10,8 +10,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
-// Solo CHURCH_ADMIN puede gestionar usuarios de su iglesia
-@Roles(UserRole.CHURCH_ADMIN)
+// Solo ADMIN puede gestionar usuarios de su organización
+@Roles(UserRole.ADMIN)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
@@ -21,7 +21,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Crear un usuario',
     description:
-      'El CHURCH_ADMIN crea un usuario directamente. ' +
+      'El ADMIN crea un usuario directamente. ' +
       'El email queda verificado automáticamente.',
   })
   @ApiCreatedResponse({ description: 'Usuario creado exitosamente' })
@@ -45,7 +45,7 @@ export class UserController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar rol de un usuario',
-    description: 'Permite cambiar el rol de un usuario dentro de la iglesia.',
+    description: 'Permite cambiar el rol de un usuario dentro de la organización.',
   })
   @ApiOkResponse({ description: 'Usuario actualizado exitosamente' })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado' })

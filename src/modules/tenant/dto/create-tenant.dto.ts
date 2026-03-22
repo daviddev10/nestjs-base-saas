@@ -3,8 +3,8 @@ import { IsString, IsNotEmpty, IsEmail, IsOptional, IsUrl, MinLength, MaxLength,
 
 export class CreateTenantDto {
     @ApiProperty({
-        example: 'Iglesia Bethel',
-        description: 'Nombre de la iglesia',
+        example: 'Acme Corp',
+        description: 'Nombre de la organización',
     })
     @IsString()
     @IsNotEmpty()
@@ -15,27 +15,24 @@ export class CreateTenantDto {
         example: 'bethel',
         description:
             'Subdominio único. Solo letras minúsculas, números y guiones. ' +
-            'Se usará como bethel.miapp.com',
+            'Se usará como bethel.miapp.com. ' +
+            'El subdominio "admin" está reservado para el sistema.',
     })
     @IsString()
     @IsNotEmpty()
     @MinLength(3)
     @MaxLength(50)
-    /**
-     * El subdominio solo puede contener letras minúsculas, números y guiones.
-     * No puede empezar ni terminar con guión.
-     * Ejemplos válidos:   bethel, iglesia-gracia, church-1
-     * Ejemplos inválidos: Bethel, iglesia_gracia, -church
-     */
-    @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    @Matches(/^(?!admin$)[a-z0-9]+(?:-[a-z0-9]+)*$/, {
         message:
-            'El subdominio solo puede contener letras minúsculas, números y guiones. No puede empezar ni terminar con guión.',
+            'El subdominio solo puede contener letras minúsculas, números y guiones. ' +
+            'No puede empezar ni terminar con guión. ' +
+            'El subdominio "admin" está reservado.',
     })
     subdomain: string;
 
     @ApiProperty({
-        example: 'admin@iglesiabethel.com',
-        description: 'Email principal de la iglesia',
+        example: 'admin@acme.com',
+        description: 'Email principal de la organización',
     })
     @IsEmail()
     @IsNotEmpty()
@@ -43,7 +40,7 @@ export class CreateTenantDto {
 
     @ApiProperty({
         example: 'Calle Falsa 123, Ciudad, País',
-        description: 'Dirección física de la iglesia',
+        description: 'Dirección física de la organización',
     })
     @IsString()
     @IsOptional()
@@ -52,7 +49,7 @@ export class CreateTenantDto {
 
     @ApiProperty({
         example: '+57 312 345 6789',
-        description: 'Teléfono de contacto de la iglesia',
+        description: 'Teléfono de contacto de la organización',
     })
     @IsString()
     @IsOptional()

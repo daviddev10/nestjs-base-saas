@@ -32,9 +32,9 @@ export class TenantService {
      * Reemplazamos guiones por underscores porque Postgres
      * no acepta guiones en nombres de schema sin comillas.
      *
-     * Ejemplo: 'iglesia-bethel' → 'iglesia_bethel'
+     * Ejemplo: 'tenant-acme' → 'tenant_acme'
      */
-    const schemaName = `iglesia_${dto.subdomain.replace(/-/g, '_')}`;
+    const schemaName = `tenant_${dto.subdomain.replace(/-/g, '_')}`;
 
     try {
       /**
@@ -80,7 +80,7 @@ export class TenantService {
       );
 
       throw new InternalServerErrorException(
-        'Ocurrió un error al registrar la iglesia. Por favor intenta nuevamente.',
+        'Ocurrió un error al registrar la organización. Por favor intenta nuevamente.',
       );
     }
   }
@@ -129,7 +129,7 @@ export class TenantService {
     });
 
     if (!tenant) {
-      throw new NotFoundException(`Iglesia con id '${id}' no encontrada`);
+      throw new NotFoundException(`Organización con id '${id}' no encontrada`);
     }
 
     return tenant;
@@ -149,7 +149,7 @@ export class TenantService {
       });
 
       if (emailEnUso) {
-        throw new ConflictException('El email ya está en uso por otra iglesia');
+        throw new ConflictException('El email ya está en uso por otro tenant');
       }
     }
 
@@ -186,7 +186,7 @@ export class TenantService {
     const tenant = await this.findOne(id);
 
     if (!tenant.isActive) {
-      throw new ConflictException('La iglesia ya está desactivada');
+      throw new ConflictException('El tenant ya está desactivado');
     }
 
     await this.prisma.tenant.update({
@@ -196,14 +196,14 @@ export class TenantService {
 
     this.logger.log(`Tenant desactivado: ${tenant.name}`);
 
-    return { message: `Iglesia '${tenant.name}' desactivada exitosamente` };
+    return { message: `Organización '${tenant.name}' desactivada exitosamente` };
   }
 
   async activate(id: string) {
     const tenant = await this.findOne(id);
 
     if (tenant.isActive) {
-      throw new ConflictException('La iglesia ya está activa');
+      throw new ConflictException('El tenant ya está activo');
     }
 
     await this.prisma.tenant.update({
@@ -213,6 +213,6 @@ export class TenantService {
 
     this.logger.log(`Tenant activado: ${tenant.name}`);
 
-    return { message: `Iglesia '${tenant.name}' activada exitosamente` };
+    return { message: `Organización '${tenant.name}' activada exitosamente` };
   }
 }

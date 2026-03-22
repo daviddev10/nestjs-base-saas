@@ -10,8 +10,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
  */
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('Administerio SaaS API')
-    .setDescription('API para la gestión integral de iglesias locales')
+    .setTitle('NestJS SaaS Base')
+    .setDescription('API para la gestión de negocios')
     .setVersion('1.0')
     .setBasePath('api/v1')
     /**
@@ -22,7 +22,7 @@ export function setupSwagger(app: INestApplication): void {
     .addGlobalParameters({
       in: 'header',
       name: 'X-Tenant-Subdomain',
-      schema: { type: 'string', example: 'casadeoracion' },
+      schema: { type: 'string', example: 'mitenant' },
       description:
         'Solo en desarrollo. Subdominio del tenant a usar. ' +
         'En producción se resuelve automáticamente por el subdominio del Host.',

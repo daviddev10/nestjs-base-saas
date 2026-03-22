@@ -9,7 +9,7 @@ generator client {
   // previewFeatures multiSchema → permite que Prisma trabaje con
   // múltiples schemas de Postgres en un solo proyecto.
   // Lo necesitamos para separar el schema 'public' (datos del SaaS)
-  // de los schemas por tenant (datos de cada iglesia)
+  // de los schemas por tenant (datos de cada organización)
   previewFeatures = ["multiSchema"]
 }
 
@@ -33,7 +33,7 @@ model Tenant {
   // Ejemplo: 'bethel' para bethel.miapp.com
   subdomain  String   @unique
   // schemaName → nombre real del schema en Postgres
-  // Ejemplo: 'iglesia_bethel'
+  // Ejemplo: 'tenant_acme'
   schemaName String   @unique @map("schema_name")
   email      String   @unique
   address    String?
@@ -80,13 +80,14 @@ model Subscription {
   @@schema("public")
 }
 
-// ── Usuarios y autenticación ─────────────────────────────────────────────────
+// ─── Schema TENANT_TEMPLATE ───────────────────────────────────────────────────
+// Agrega aquí los modelos específicos de tu dominio de negocio
 
 model User {
   id                 String    @id @default(uuid())
   email              String    @unique
   passwordHash       String    @map("password_hash")
-  role               UserRole  @default(SECRETARY)
+  role               UserRole  @default(EDITOR)
   isActive           Boolean   @default(true) @map("is_active")
   emailVerified      Boolean   @default(false) @map("email_verified")
   emailVerifyToken   String?   @map("email_verify_token")
@@ -122,8 +123,8 @@ model RefreshToken {
 
 enum UserRole {
   SUPER_ADMIN
-  CHURCH_ADMIN
-  SECRETARY
+  ADMIN
+  EDITOR
 
   @@schema("tenant_template")
 }

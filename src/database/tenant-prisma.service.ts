@@ -8,7 +8,7 @@ export class TenantPrismaService implements OnModuleDestroy {
     private readonly logger = new Logger(TenantPrismaService.name);
 
     // Map de schemaName → PrismaClient
-    // Ejemplo: { 'iglesia_bethel': PrismaClient, 'iglesia_gracia': PrismaClient }
+    // Ejemplo: { 'tenant_acme': PrismaClient, 'tenant_beta': PrismaClient }
     private readonly clients = new Map<string, PrismaClient>();
 
     constructor(private readonly configService: ConfigService) { }
@@ -54,8 +54,8 @@ export class TenantPrismaService implements OnModuleDestroy {
         /**
          * Aquí está la magia del multitenancy con Postgres:
          *
-         * Agregamos ?schema=iglesia_bethel a la URL de conexión.
-         * Esto le dice a Prisma que ejecute un SET search_path = iglesia_bethel
+         * Agregamos ?schema=tenant_acme a la URL de conexión.
+         * Esto le dice a Prisma que ejecute un SET search_path = tenant_acme
          * antes de cada query, haciendo que todas las queries de este cliente
          * apunten automáticamente al schema correcto.
          */
@@ -85,10 +85,10 @@ export class TenantPrismaService implements OnModuleDestroy {
     }
 
     /**
-     * Provisiona un schema nuevo para una iglesia recién registrada.
+     * Provisiona un schema nuevo para una organización recién registrada.
      *
      * Este método se llamará desde el TenantService cuando el
-     * Super Admin registre una nueva iglesia en el SaaS.
+     * Super Admin registre un nuevo tenant en el SaaS.
      *
      * Por ahora solo crea el schema vacío. Las migraciones
      * las implementaremos cuando tengamos el schema del tenant listo.
@@ -111,7 +111,7 @@ export class TenantPrismaService implements OnModuleDestroy {
      * Construye la URL de conexión con el schema como parámetro.
      *
      * Entrada:  postgresql://user:pass@host:5432/postgres
-     * Salida:   postgresql://user:pass@host:5432/postgres?schema=iglesia_bethel
+     * Salida:   postgresql://user:pass@host:5432/postgres?schema=tenant_acme
      *
      * Si la URL ya tiene query params los respeta y agrega el schema.
      */

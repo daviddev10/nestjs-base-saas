@@ -5,7 +5,7 @@ import { UserRole } from '@prisma/client';
 export class UpdateUserDto {
     @ApiPropertyOptional({
         enum: UserRole,
-        example: UserRole.SECRETARY,
+        example: UserRole.EDITOR,
     })
     @IsEnum(UserRole)
     @IsOptional()

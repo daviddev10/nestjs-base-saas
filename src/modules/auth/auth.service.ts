@@ -28,7 +28,7 @@ export class AuthService {
     private readonly tenantPrisma: TenantPrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    // PrismaService → para leer datos del tenant (nombre iglesia)
+    // PrismaService → para leer datos del tenant (nombre organización)
     // desde el schema public
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
@@ -74,9 +74,9 @@ export class AuthService {
         data: {
           email: dto.email,
           passwordHash,
-          // El primer usuario de un tenant es CHURCH_ADMIN por defecto
+          // El primer usuario de un tenant es ADMIN por defecto
           // Esto lo ajustaremos cuando tengamos el flujo completo de onboarding
-          role: UserRole.CHURCH_ADMIN,
+          role: UserRole.ADMIN,
           emailVerifyToken,
           emailVerifyExpires,
         },
@@ -133,7 +133,7 @@ export class AuthService {
     await this.mailService.sendVerifyEmail({
       to: user.email,
       verifyUrl,
-      churchName: tenant.name,
+      tenantName: tenant.name,
     });
 
     this.logger.debug(`Token de verificación generado para: ${user.email}`);
@@ -479,7 +479,7 @@ export class AuthService {
       data: { resetToken, resetTokenExpires },
     });
 
-    // Obtenemos el nombre de la iglesia para personalizar el email
+    // Obtenemos el nombre del tenant para personalizar el email
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: context.tenantId },
       select: { name: true, subdomain: true },
@@ -494,7 +494,7 @@ export class AuthService {
     await this.mailService.sendResetPassword({
       to: user.email,
       resetUrl,
-      churchName: tenant!.name,
+      tenantName: tenant!.name,
     });
 
     return {
@@ -590,7 +590,7 @@ export class AuthService {
     await this.mailService.sendVerifyEmail({
       to: user.email,
       verifyUrl,
-      churchName: tenant.name,
+      tenantName: tenant.name,
     });
 
     return { message: 'Email de verificación reenviado.' };
@@ -619,7 +619,7 @@ export class AuthService {
       throw new ConflictException('El 2FA ya está activado en esta cuenta');
     }
 
-    // Obtenemos el nombre de la iglesia para mostrarlo en Google Authenticator
+    // Obtenemos el nombre del tenant para mostrarlo en Google Authenticator
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: context.tenantId },
       select: { name: true },
@@ -636,7 +636,7 @@ export class AuthService {
      */
     const secret = speakeasy.generateSecret({
       name: `${tenant.name} (${user.email})`,
-      issuer: 'Church SaaS',
+      issuer: 'SaaS Platform',
       length: 20,
     });
 
@@ -859,52 +859,91 @@ export class AuthService {
 
   async createSuperAdmin(dto: CreateAuthDto, bootstrapSecret: string) {
     const secretEsperado = this.configService.get<string>('app.bootstrapSecret');
-    // Verificamos la clave de bootstrap para evitar que cualquiera
-    // pueda crear un Super Admin
+
     if (bootstrapSecret !== secretEsperado) {
       throw new UnauthorizedException('Clave de bootstrap inválida');
     }
 
     /**
-     * El Super Admin NO pertenece a ningún tenant — vive en el schema public.
-     * Por eso usamos PrismaService (schema public) en lugar de TenantPrismaService.
-     * Pero como el modelo User está en tenant_template, necesitamos
-     * manejar esto de forma especial.
-     *
-     * Por ahora lo creamos en el schema tenant_template con rol SUPER_ADMIN.
-     * Cuando implementemos el provisionamiento completo lo moveremos al public.
+     * Verificamos si ya existe el tenant 'admin'.
+     * Si no existe lo creamos automáticamente — es el tenant
+     * reservado donde viven los Super Admins del SaaS.
      */
-    const client = this.tenantPrisma.getClient();
-
-    const existente = await client.user.findUnique({
-      where: { email: dto.email },
+    let adminTenant = await this.prisma.tenant.findUnique({
+      where: { subdomain: 'admin' },
     });
 
-    if (existente) {
-      throw new ConflictException('Ya existe un usuario con este email');
+    if (!adminTenant) {
+      this.logger.log('Creando tenant reservado: admin');
+
+      adminTenant = await this.prisma.tenant.create({
+        data: {
+          name: 'SaaS Admin',
+          subdomain: 'admin',
+          schemaName: 'tenant_admin',
+          email: 'admin@saas.com',
+          currency: 'USD',
+          timezone: 'UTC',
+          isActive: true,
+        },
+      });
+
+      // Provisionamos el schema del tenant admin
+      await this.tenantPrisma.provisionSchema('tenant_admin');
     }
 
-    const passwordHash = await argon2.hash(dto.password);
+    /**
+     * Ahora creamos el Super Admin dentro del tenant 'admin'.
+     * Ejecutamos el código dentro del contexto del tenant admin
+     * para que TenantPrismaService apunte al schema correcto.
+     */
+    return new Promise((resolve, reject) => {
+      tenantContext.run(
+        { schemaName: 'tenant_admin', tenantId: adminTenant.id },
+        async () => {
+          try {
+            const client = this.tenantPrisma.getClient();
 
-    const user = await client.user.create({
-      data: {
-        email: dto.email,
-        passwordHash,
-        role: UserRole.SUPER_ADMIN,
-        // El Super Admin no necesita verificar email
-        emailVerified: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+            const existente = await client.user.findUnique({
+              where: { email: dto.email },
+            });
+
+            if (existente) {
+              reject(new ConflictException('Ya existe un usuario con este email'));
+              return;
+            }
+
+            const passwordHash = await argon2.hash(dto.password);
+
+            const user = await client.user.create({
+              data: {
+                email: dto.email,
+                passwordHash,
+                role: UserRole.SUPER_ADMIN,
+                emailVerified: true,
+              },
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            });
+
+            this.logger.log(`Super Admin creado: ${user.email}`);
+
+            resolve({
+              message: 'Super Admin creado exitosamente',
+              user,
+              // Informamos el subdominio que debe usar para login
+              loginSubdomain: 'admin',
+            });
+          } catch (error) {
+            reject(error);
+          }
+        },
+      );
     });
-
-    this.logger.log(`Super Admin creado: ${user.email}`);
-
-    return { message: 'Super Admin creado exitosamente', user };
   }
 
   async getProfile(userId: string) {

@@ -27,11 +27,11 @@ export class CreateUserDto {
     password: string;
 
     @ApiPropertyOptional({
-        enum: [UserRole.CHURCH_ADMIN, UserRole.SECRETARY],
-        example: UserRole.SECRETARY,
-        description: 'Rol del usuario. Por defecto: SECRETARY',
+        enum: [UserRole.ADMIN, UserRole.EDITOR],
+        example: UserRole.EDITOR,
+        description: 'Rol del usuario. Por defecto: EDITOR',
     })
-    @IsEnum([UserRole.CHURCH_ADMIN, UserRole.SECRETARY])
+    @IsEnum([UserRole.ADMIN, UserRole.EDITOR])
     @IsOptional()
     role?: UserRole;
 }

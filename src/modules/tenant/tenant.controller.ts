@@ -14,7 +14,7 @@ export class TenantController {
   constructor(private readonly tenantService: TenantService) { }
 
   /**
-   * @summary Registrar una nueva iglesia
+   * @summary Registrar una nueva organización
    * @description Crea el tenant en la BD y provisiona su schema en Postgres. Solo accesible por el Super Admin.
    */
   @Post()
@@ -25,8 +25,8 @@ export class TenantController {
   }
 
   /**
-   * @summary Listar todas las iglesias
-   * @description Retorna todas las iglesias registradas en el SaaS.
+   * @summary Listar todos los tenants
+   * @description Retorna todos los tenants registrados en el SaaS.
    */
   @Get()
   @Roles(UserRole.SUPER_ADMIN)
@@ -35,8 +35,8 @@ export class TenantController {
   }
 
   /**
-   * @summary Obtener una iglesia por ID
-   * @description Retorna los datos completos de una iglesia específica.
+   * @summary Obtener un tenant por ID
+   * @description Retorna los datos completos de un tenant específico.
    */
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -44,8 +44,8 @@ export class TenantController {
   }
 
   /**
-   * @summary Actualizar datos de una iglesia
-   * @description Actualiza la información de una iglesia específica.
+   * @summary Actualizar datos de un tenant
+   * @description Actualiza la información de un tenant específico.
    */
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateTenantDto) {
@@ -53,8 +53,8 @@ export class TenantController {
   }
 
   /**
-   * @summary Desactivar una iglesia
-   * @description Marca la iglesia como inactiva. Los datos se conservan y se puede reactivar.
+   * @summary Desactivar un tenant
+   * @description Marca el tenant como inactivo. Los datos se conservan y se puede reactivar.
    */
   @Delete(':id')
   deactivate(@Param('id') id: string) {
@@ -62,8 +62,8 @@ export class TenantController {
   }
 
   /**
-   * @summary Reactivar una iglesia desactivada
-   * @description Marca la iglesia como activa. Los datos se conservan y se puede desactivar.
+   * @summary Reactivar un tenant desactivado
+   * @description Marca el tenant como activo. Los datos se conservan y se puede desactivar.
    */
   @Patch(':id/activate')
   activate(@Param('id') id: string) {

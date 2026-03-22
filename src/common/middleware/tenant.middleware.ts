@@ -47,15 +47,15 @@ export class TenantMiddleware implements NestMiddleware {
         // Si el subdominio no existe en la BD → 404 claro
         if (!tenant) {
             throw new NotFoundException(
-                `No existe ninguna iglesia con el subdominio '${subdomain}'`,
+                `No existe ninguna organización con el subdominio '${subdomain}'`,
             );
         }
 
-        // Si la iglesia existe pero está desactivada → 404
+        // Si la organización existe pero está desactivada → 404
         // Usamos 404 en lugar de 403 para no revelar que el tenant existe
         if (!tenant.isActive) {
             throw new NotFoundException(
-                `No existe ninguna iglesia con el subdominio '${subdomain}'`,
+                `No existe ninguna organización con el subdominio '${subdomain}'`,
             );
         }
 

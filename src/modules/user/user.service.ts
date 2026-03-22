@@ -28,7 +28,7 @@ export class UserService {
       data: {
         email: dto.email,
         passwordHash,
-        role: dto.role ?? UserRole.SECRETARY,
+        role: dto.role ?? UserRole.EDITOR,
         /**
          * Cuando un admin crea el usuario directamente
          * marcamos el email como verificado — el admin
@@ -109,14 +109,14 @@ export class UserService {
      * Evitamos que se cambie el rol del único SUPER_ADMIN.
      * Siempre debe haber al menos un admin en el sistema.
      */
-    if (user.role === UserRole.CHURCH_ADMIN && dto.role !== UserRole.CHURCH_ADMIN) {
+    if (user.role === UserRole.ADMIN && dto.role !== UserRole.ADMIN) {
       const admins = await client.user.count({
-        where: { role: UserRole.CHURCH_ADMIN, isActive: true },
+        where: { role: UserRole.ADMIN, isActive: true },
       });
 
       if (admins <= 1) {
         throw new ForbiddenException(
-          'No puedes cambiar el rol del único administrador de la iglesia',
+          'No puedes cambiar el rol del único administrador de la organización',
         );
       }
     }
@@ -155,14 +155,14 @@ export class UserService {
     }
 
     // Verificamos que no sea el último admin activo
-    if (user.role === UserRole.CHURCH_ADMIN) {
+    if (user.role === UserRole.ADMIN) {
       const admins = await client.user.count({
-        where: { role: UserRole.CHURCH_ADMIN, isActive: true },
+        where: { role: UserRole.ADMIN, isActive: true },
       });
 
       if (admins <= 1) {
         throw new ForbiddenException(
-          'No puedes desactivar al único administrador de la iglesia',
+          'No puedes desactivar al único administrador de la organización',
         );
       }
     }

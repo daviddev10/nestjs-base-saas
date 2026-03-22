@@ -10,7 +10,7 @@ import { UserRole } from '@prisma/client';
  *   findAll() { ... }
  *
  *   // Múltiples roles permitidos:
- *   @Roles(UserRole.CHURCH_ADMIN, UserRole.SECRETARY)
+ *   @Roles(UserRole.ADMIN, UserRole.EDITOR)
  *   @Get('members')
  *   findAll() { ... }
  */

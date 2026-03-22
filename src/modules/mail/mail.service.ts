@@ -10,16 +10,16 @@ export class MailService {
     async sendVerifyEmail(params: {
         to: string;
         verifyUrl: string;
-        churchName: string;
+        tenantName: string;
     }): Promise<void> {
         try {
             await this.mailerService.sendMail({
                 to: params.to,
-                subject: `Verifica tu email — ${params.churchName}`,
+                subject: `Verifica tu email — ${params.tenantName}`,
                 template: 'verify-email',
                 context: {
                     verifyUrl: params.verifyUrl,
-                    churchName: params.churchName,
+                    tenantName: params.tenantName,
                 },
             });
 
@@ -36,16 +36,16 @@ export class MailService {
     async sendResetPassword(params: {
         to: string;
         resetUrl: string;
-        churchName: string;
+        tenantName: string;
     }): Promise<void> {
         try {
             await this.mailerService.sendMail({
                 to: params.to,
-                subject: `Restablecer contraseña — ${params.churchName}`,
+                subject: `Restablecer contraseña — ${params.tenantName}`,
                 template: 'reset-password',
                 context: {
                     resetUrl: params.resetUrl,
-                    churchName: params.churchName,
+                    tenantName: params.tenantName,
                 },
             });
 

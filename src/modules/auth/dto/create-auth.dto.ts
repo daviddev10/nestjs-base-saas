@@ -10,7 +10,7 @@ import {
 
 export class CreateAuthDto {
     @ApiProperty({
-        example: 'pastor@iglesiabethel.com',
+        example: 'admin@acme.com',
         description: 'Email del usuario',
     })
     @IsEmail()

@@ -81,6 +81,10 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
+      .exclude(
+        // Excluimos bootstrap porque no hay tenant aún
+        'api/v1/auth/bootstrap/(.*)',
+      )
       .forRoutes('*path');
   }
 
